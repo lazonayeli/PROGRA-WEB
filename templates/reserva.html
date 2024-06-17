@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Reserva{% endblock %} 
+
+{% block content %}
+    <!-- Manejo de mensajes flash -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="container">
+                {% for message in messages %}
+                    <div class="alert alert-primary alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <div class="card shadow">
+            <div class="card-body">
+                <h5 class="card-title">Reserva</h5>
+
+                <!-- Botón para abrir modal de agregar reserva -->
+                <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalAgregarReserva">Agregar Reserva</button>
+
+                <!-- Tabla de reservas -->
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Fecha de Reserva</th>
+                            <th scope="col">Fecha de Llegada</th>
+                            <th scope="col">Fecha de Salida</th>
+                            <th scope="col">Estado de la Reserva</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Habitación</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in reservas %}
+                            <tr>
+                                <td>{{ reserva.idreserva }}</td>
+                                <td>{{ reserva.fecha_reserva }}</td>
+                                <td>{{ reserva.fecha_llegada }}</td>
+                                <td>{{ reserva.fecha_salida }}</td>
+                                <td>{{ reserva.estado_reserva }}</td>
+                                <td>{{ reserva.cliente.nombre }} {{ reserva.cliente.apellido }}</td>
+                                <td>{{ reserva.habitacion.numero_habitacion }} {{ reserva.habitacion.tipo_habitacion }}</td>
+                                <td>
+                                    <!-- Botón para editar reserva -->
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="editarReserva('{{ reserva.idreserva }}')" data-bs-toggle="modal" data-bs-target="#modalEditarReserva">Editar</button>
+                                    <!-- Enlace para eliminar reserva -->
+                                    <a href="{{ url_for('eliminar_reserva', id_reserva=reserva.idreserva) }}" class="btn btn-danger btn-sm">Eliminar</a>
+
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar reserva -->
+    <div class="modal fade" id="modalAgregarReserva" tabindex="-1" aria-labelledby="modalAgregarReservaLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarReservaLabel">Agregar Reserva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ url_for('agregar_reserva') }}" method="POST">
+                    <div class="modal-body">
+                        <!-- Campos del formulario para agregar reserva -->
+                        <div class="mb-3">
+                            <label for="fecha_reserva" class="form-label">Fecha de Reserva</label>
+                            <input type="text" class="form-control" id="fecha_reserva" name="fecha_reserva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha_llegada" class="form-label">Fecha de Llegada</label>
+                            <input type="text" class="form-control" id="fecha_llegada" name="fecha_llegada" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha_salida" class="form-label">Fecha de Salida</label>
+                            <input type="text" class="form-control" id="fecha_salida" name="fecha_salida" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="estado_reserva" class="form-label">Estado de la Reserva</label>
+                            <input type="text" class="form-control" id="estado_reserva" name="estado_reserva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="idCliente" class="form-label">Cliente</label>
+                            <select class="form-select" id="idCliente" name="idCliente" required>
+                                <option value="">Selecciona una opción</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.idcliente }}">{{ cliente.nombre }} {{ cliente.apellido }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="idHabitacion" class="form-label">Habitación</label>
+                            <select class="form-select" id="idHabitacion" name="idHabitacion" required>
+                                <option value="">Selecciona una opción</option>
+                                {% for habitacion in habitaciones %}
+                                    <option value="{{ habitacion.idhabitacion }}">{{ habitacion.numero_habitacion }} {{ habitacion.tipo_habitacion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Fin Modal para agregar reserva -->
+
+    <!-- Modal para editar reserva -->
+    <div class="modal fade" id="modalEditarReserva" tabindex="-1" aria-labelledby="modalEditarReservaLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarReservaLabel">Editar Reserva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formEditarReserva" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" id="editarIdReserva" name="id_reserva">
+                        <div class="mb-3">
+                            <label for="editarFechaReserva" class="form-label">Fecha de Reserva</label>
+                            <input type="text" class="form-control" id="editarFechaReserva" name="fecha_reserva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editarFechaLlegada" class="form-label">Fecha de Llegada</label>
+                            <input type="text" class="form-control" id="editarFechaLlegada" name="fecha_llegada" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editarFechaSalida" class="form-label">Fecha de Salida</label>
+                            <input type="text" class="form-control" id="editarFechaSalida" name="fecha_salida" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editarEstadoReserva" class="form-label">Estado de la Reserva</label>
+                            <input type="text" class="form-control" id="editarEstadoReserva" name="estado_reserva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editarIdCliente" class="form-label">Cliente</label>
+                            <select class="form-select" id="editarIdCliente" name="editarIdCliente" required>
+                                <option value="">Selecciona una opción</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.idcliente }}">{{ cliente.nombre }} {{ cliente.apellido }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editarIdHabitacion" class="form-label">Habitación</label>
+                            <select class="form-select" id="editarIdHabitacion" name="editarIdHabitacion" required>
+                                <option value="">Selecciona una opción</option>
+                                {% for habitacion in habitaciones %}
+                                    <option value="{{ habitacion.idhabitacion }}">{{ habitacion.numero_habitacion }} {{ habitacion.tipo_habitacion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Fin del modal
+Fin del modal para editar reserva -->
+
+{% endblock %}
+
+{% block javascripts %}
+    <script src="{{ url_for('static', filename='js/scriptReserva.js') }}"></script>
+   
+{% endblock %}
